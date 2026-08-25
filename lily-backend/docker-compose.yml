@@ -1,0 +1,24 @@
+services:
+  lily-api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/lily
+      LILY_INTERNAL_API_KEY: ${LILY_INTERNAL_API_KEY:-demo-key}
+    depends_on:
+      postgres:
+        condition: service_healthy
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: lily
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d lily"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

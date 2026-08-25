@@ -1,0 +1,2155 @@
+You are a senior frontend engineer and product designer.
+
+Build the complete frontend for a hackathon project called:
+
+# LILY
+## AI Incident Response & Automation Platform
+
+Lily is an AI-powered incident management platform.
+
+The frontend communicates with a Python FastAPI backend.
+
+The backend communicates with:
+- PostgreSQL
+- AI/LLM services
+- n8n automation workflows
+
+n8n is responsible for workflow automation such as:
+- notifications
+- Telegram alerts
+- approval workflows
+- automated backend actions
+- incident escalation
+
+The frontend must NOT directly communicate with n8n for core business operations.
+
+Architecture:
+
+React Frontend
+      |
+      | REST API
+      ▼
+FastAPI Backend
+      |
+      ├── PostgreSQL
+      ├── AI Engine
+      └── n8n
+            |
+            ├── Telegram
+            ├── Notifications
+            ├── Approvals
+            └── Automated Actions
+
+
+==================================================
+1. TECHNOLOGY STACK
+==================================================
+
+Use:
+
+- React
+- TypeScript
+- Vite
+- React Router
+- Tailwind CSS
+- TanStack Query
+- Axios
+- React Hook Form
+- Zod
+- Lucide React
+- Recharts
+
+Use modern React functional components.
+
+Do NOT use:
+- jQuery
+- Bootstrap
+- Material UI
+- unnecessary UI libraries
+- class components
+
+Use TypeScript strictly.
+
+Avoid `any` unless absolutely unavoidable.
+
+Use reusable components instead of duplicating UI.
+
+==================================================
+2. PROJECT STRUCTURE
+==================================================
+
+Create a clean production-ready structure:
+
+src/
+├── api/
+│   ├── client.ts
+│   ├── incidents.ts
+│   ├── dashboard.ts
+│   ├── approvals.ts
+│   ├── actions.ts
+│   ├── automation.ts
+│   └── system.ts
+│
+├── components/
+│   ├── layout/
+│   │   ├── AppLayout.tsx
+│   │   ├── Sidebar.tsx
+│   │   ├── Topbar.tsx
+│   │   └── MobileSidebar.tsx
+│   │
+│   ├── dashboard/
+│   │   ├── MetricCard.tsx
+│   │   ├── IncidentChart.tsx
+│   │   ├── RecentIncidents.tsx
+│   │   ├── SystemStatus.tsx
+│   │   └── AIOverview.tsx
+│   │
+│   ├── incidents/
+│   │   ├── IncidentCard.tsx
+│   │   ├── IncidentTable.tsx
+│   │   ├── IncidentFilters.tsx
+│   │   ├── IncidentStatusBadge.tsx
+│   │   ├── IncidentSeverityBadge.tsx
+│   │   ├── IncidentTimeline.tsx
+│   │   ├── AIAnalysisCard.tsx
+│   │   └── CreateIncidentDialog.tsx
+│   │
+│   ├── approvals/
+│   │   ├── ApprovalCard.tsx
+│   │   ├── ApprovalList.tsx
+│   │   └── ApprovalDialog.tsx
+│   │
+│   ├── actions/
+│   │   ├── ActionCard.tsx
+│   │   ├── ActionHistory.tsx
+│   │   └── ActionStatusBadge.tsx
+│   │
+│   ├── automation/
+│   │   ├── WorkflowDiagram.tsx
+│   │   ├── WorkflowStep.tsx
+│   │   ├── AutomationCard.tsx
+│   │   └── AutomationLog.tsx
+│   │
+│   ├── common/
+│   │   ├── PageHeader.tsx
+│   │   ├── EmptyState.tsx
+│   │   ├── LoadingState.tsx
+│   │   ├── ErrorState.tsx
+│   │   ├── StatusDot.tsx
+│   │   ├── ConfirmDialog.tsx
+│   │   └── SearchInput.tsx
+│   │
+│   └── ui/
+│       ├── Button.tsx
+│       ├── Card.tsx
+│       ├── Badge.tsx
+│       ├── Modal.tsx
+│       ├── Input.tsx
+│       ├── Select.tsx
+│       └── Skeleton.tsx
+│
+├── pages/
+│   ├── DashboardPage.tsx
+│   ├── IncidentsPage.tsx
+│   ├── IncidentDetailsPage.tsx
+│   ├── ApprovalsPage.tsx
+│   ├── ActionsPage.tsx
+│   ├── AutomationPage.tsx
+│   ├── ReportsPage.tsx
+│   ├── SettingsPage.tsx
+│   └── NotFoundPage.tsx
+│
+├── hooks/
+│   ├── useIncidents.ts
+│   ├── useDashboard.ts
+│   ├── useApprovals.ts
+│   ├── useActions.ts
+│   └── useSystemStatus.ts
+│
+├── types/
+│   ├── incident.ts
+│   ├── approval.ts
+│   ├── action.ts
+│   ├── dashboard.ts
+│   └── api.ts
+│
+├── utils/
+│   ├── formatDate.ts
+│   ├── formatDuration.ts
+│   ├── severity.ts
+│   └── status.ts
+│
+├── constants/
+│   └── index.ts
+│
+├── App.tsx
+├── main.tsx
+└── index.css
+
+
+==================================================
+3. ENVIRONMENT VARIABLES
+==================================================
+
+Create:
+
+.env.example
+
+with:
+
+VITE_API_BASE_URL=http://localhost:8000/api/v1
+
+Do not hardcode backend URLs.
+
+Axios should use:
+
+import.meta.env.VITE_API_BASE_URL
+
+
+==================================================
+4. API CLIENT
+==================================================
+
+Create:
+
+src/api/client.ts
+
+Use Axios.
+
+Example configuration:
+
+- baseURL from environment
+- JSON content type
+- request timeout
+- centralized error handling
+
+Create typed API functions.
+
+Example:
+
+GET /dashboard/summary
+
+GET /incidents
+
+GET /incidents/{id}
+
+POST /incidents
+
+POST /incidents/{id}/analyze
+
+POST /incidents/{id}/approve
+
+POST /incidents/{id}/reject
+
+POST /incidents/{id}/actions
+
+GET /approvals
+
+GET /actions
+
+GET /automation/status
+
+GET /system/health
+
+
+IMPORTANT:
+
+Do not assume the backend API exactly matches these endpoints.
+
+Put all API endpoints in one place so they can easily be changed.
+
+If an endpoint is not implemented yet, create a clean typed API function and provide a mock fallback only for development.
+
+==================================================
+5. DATA TYPES
+==================================================
+
+Create strict TypeScript interfaces.
+
+Incident:
+
+interface Incident {
+  id: string;
+  title: string;
+  description: string;
+  service: string;
+  environment: string;
+  severity: IncidentSeverity;
+  status: IncidentStatus;
+  category?: string;
+  aiConfidence?: number;
+  aiSummary?: string;
+  recommendedAction?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+Severity:
+
+LOW
+MEDIUM
+HIGH
+CRITICAL
+
+Status:
+
+OPEN
+ANALYZING
+AWAITING_APPROVAL
+APPROVED
+IN_PROGRESS
+RESOLVED
+FAILED
+CLOSED
+
+Approval:
+
+interface Approval {
+  id: string;
+  incidentId: string;
+  incidentTitle: string;
+  action: string;
+  reason: string;
+  riskLevel: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  createdAt: string;
+}
+
+Action:
+
+interface IncidentAction {
+  id: string;
+  incidentId: string;
+  type: string;
+  description: string;
+  status: "PENDING" | "RUNNING" | "SUCCESS" | "FAILED";
+  triggeredBy: string;
+  createdAt: string;
+  completedAt?: string;
+}
+
+==================================================
+6. ROUTING
+==================================================
+
+Use React Router.
+
+Routes:
+
+/dashboard
+
+/incidents
+
+/incidents/:id
+
+/approvals
+
+/actions
+
+/automation
+
+/reports
+
+/settings
+
+*
+
+Redirect:
+
+/ → /dashboard
+
+
+==================================================
+7. GLOBAL LAYOUT
+==================================================
+
+Use:
+
+<AppLayout>
+
+  <Sidebar />
+
+  <main>
+
+    <Topbar />
+
+    <PageContent />
+
+  </main>
+
+</AppLayout>
+
+Desktop:
+
+Sidebar:
+250px approximately.
+
+Main content:
+remaining width.
+
+Mobile:
+
+Sidebar becomes drawer.
+
+Topbar remains fixed/sticky.
+
+==================================================
+8. SIDEBAR
+==================================================
+
+Brand:
+
+✦ Lily
+
+Subtitle:
+
+AI Incident Response
+
+Navigation:
+
+Dashboard
+Incidents
+Approvals
+Actions
+Automation
+Reports
+
+Bottom:
+
+Settings
+
+System Status
+
+Show:
+
+● All Systems Operational
+
+Active navigation:
+
+Blue background
+Blue left border
+White text
+
+Use Lucide icons.
+
+Icons:
+
+Dashboard:
+LayoutDashboard
+
+Incidents:
+AlertTriangle
+
+Approvals:
+ShieldCheck
+
+Actions:
+Zap
+
+Automation:
+Workflow
+
+Reports:
+BarChart3
+
+Settings:
+Settings
+
+==================================================
+9. TOPBAR
+==================================================
+
+Topbar:
+
+Page title
+
+Search
+
+Notifications
+
+System status
+
+User avatar
+
+Example:
+
+Dashboard
+
+                           🔍   🔔   ● Operational   VT
+
+
+==================================================
+10. COLOR SYSTEM
+==================================================
+
+PRIMARY BRAND COLOR:
+
+#2563EB
+
+Primary hover:
+
+#1D4ED8
+
+Light blue:
+
+#3B82F6
+
+Deep blue:
+
+#1E3A8A
+
+Background:
+
+#0B1220
+
+Secondary:
+
+#111827
+
+Cards:
+
+#151F32
+
+Borders:
+
+#24324A
+
+Primary text:
+
+#F8FAFC
+
+Secondary text:
+
+#94A3B8
+
+Muted:
+
+#64748B
+
+Blue highlight:
+
+#60A5FA
+
+Use dark navy + blue as the dominant visual identity.
+
+Do NOT use purple as the primary color.
+
+Do NOT create random gradients.
+
+Use semantic colors:
+
+Success:
+green
+
+Warning:
+yellow/orange
+
+Critical:
+red
+
+Information:
+blue
+
+
+==================================================
+11. GLOBAL UI STYLE
+==================================================
+
+Design language:
+
+Modern enterprise SaaS.
+
+The application should look like:
+
+AI Operations
++
+DevOps Monitoring
++
+Incident Management
+
+Use:
+
+- 12–16px rounded corners
+- subtle borders
+- minimal shadows
+- dark navy cards
+- blue highlights
+- consistent spacing
+- clean typography
+
+Use Inter or Geist.
+
+Avoid:
+
+- excessive glassmorphism
+- excessive gradients
+- huge rounded containers
+- childish UI
+- excessive animations
+
+
+==================================================
+12. DASHBOARD
+==================================================
+
+Create a premium dashboard.
+
+Header:
+
+Good evening 👋
+
+Lily is monitoring your systems.
+
+Metric cards:
+
+Open Incidents
+
+Critical Incidents
+
+Resolved Today
+
+Average Resolution Time
+
+Example:
+
+OPEN INCIDENTS
+
+12
+
+↑ 8% this week
+
+
+CRITICAL
+
+2
+
+Needs attention
+
+
+RESOLVED
+
+48
+
+↑ 14%
+
+
+AVG RESOLUTION
+
+18m
+
+↓ 12%
+
+
+==================================================
+13. DASHBOARD CHART
+==================================================
+
+Use Recharts.
+
+Create:
+
+Incident Activity
+
+Show:
+
+- incidents created
+- incidents resolved
+
+Time range:
+
+24H
+7D
+30D
+
+Primary chart color:
+
+Blue.
+
+Tooltip:
+
+dark navy.
+
+Do not overdesign the chart.
+
+
+==================================================
+14. RECENT INCIDENTS
+==================================================
+
+Create a table/card.
+
+Columns:
+
+Incident
+
+Severity
+
+Service
+
+Status
+
+Created
+
+Action
+
+Example:
+
+Payment API latency
+HIGH
+payment-api
+AWAITING APPROVAL
+8 min ago
+View
+
+
+Clicking the row navigates to:
+
+/incidents/:id
+
+
+==================================================
+15. SYSTEM STATUS
+==================================================
+
+Dashboard card:
+
+SYSTEM STATUS
+
+● Lily API       Healthy
+
+● PostgreSQL     Healthy
+
+● AI Engine      Healthy
+
+● n8n            Connected
+
+● Telegram       Connected
+
+
+Last checked:
+
+10 seconds ago
+
+Allow refresh.
+
+
+==================================================
+16. AI OVERVIEW
+==================================================
+
+Create:
+
+Lily AI Analysis
+
+Example:
+
+✦ Lily AI
+
+12 incidents analyzed today
+
+Average confidence
+
+91.4%
+
+Top category:
+
+Performance
+
+Most affected:
+
+Payment API
+
+
+==================================================
+17. INCIDENTS PAGE
+==================================================
+
+Header:
+
+Incidents
+
+Description:
+
+Monitor, investigate and resolve production incidents.
+
+Button:
+
++ Create Incident
+
+
+Filters:
+
+Search
+
+Severity
+
+Status
+
+Service
+
+Date
+
+
+Views:
+
+Table view
+
+Card view
+
+
+==================================================
+18. INCIDENT TABLE
+==================================================
+
+Columns:
+
+Title
+
+Severity
+
+Service
+
+Environment
+
+Status
+
+AI Confidence
+
+Created
+
+Actions
+
+
+Example:
+
+Payment API latency
+
+HIGH
+
+payment-api
+
+production
+
+AWAITING APPROVAL
+
+92%
+
+8 min ago
+
+
+Use badges.
+
+==================================================
+19. CREATE INCIDENT
+==================================================
+
+Create modal.
+
+Fields:
+
+Title
+
+Description
+
+Service
+
+Environment
+
+Severity
+
+Example:
+
+Title:
+
+Payment API latency increased
+
+Description:
+
+Payment requests are taking longer than 3 seconds.
+
+Service:
+
+payment-api
+
+Environment:
+
+production
+
+Severity:
+
+HIGH
+
+
+Button:
+
+Create Incident
+
+
+After creation:
+
+status:
+
+ANALYZING
+
+
+==================================================
+20. INCIDENT DETAILS
+==================================================
+
+Page:
+
+Incident Details
+
+Header:
+
+Payment API latency increased
+
+Badge:
+
+HIGH
+
+Status:
+
+AWAITING APPROVAL
+
+
+Sections:
+
+Overview
+
+AI Analysis
+
+Recommended Action
+
+Timeline
+
+Automation
+
+Approval
+
+Action History
+
+
+==================================================
+21. AI ANALYSIS CARD
+==================================================
+
+Premium blue card.
+
+Show:
+
+Severity
+
+Category
+
+Urgency
+
+Confidence
+
+Summary
+
+Impact
+
+Recommended Action
+
+
+Example:
+
+✦ Lily AI Analysis
+
+Severity:
+HIGH
+
+Category:
+PERFORMANCE
+
+Urgency:
+HIGH
+
+Confidence:
+92%
+
+Summary:
+
+Payment API latency has increased significantly
+in production.
+
+Impact:
+
+Users may experience slow payment processing.
+
+Recommended Action:
+
+Restart payment-api and monitor latency.
+
+
+==================================================
+22. INCIDENT TIMELINE
+==================================================
+
+Timeline:
+
+Incident created
+
+AI analysis started
+
+AI analysis completed
+
+Approval requested
+
+Approval approved
+
+Automation started
+
+Action completed
+
+Incident resolved
+
+
+Use blue timeline line.
+
+Current event should pulse.
+
+==================================================
+23. APPROVALS PAGE
+==================================================
+
+Page:
+
+Approvals
+
+Description:
+
+Review AI-recommended actions before execution.
+
+Tabs:
+
+Pending
+
+Approved
+
+Rejected
+
+
+Approval card:
+
+Payment API latency increased
+
+Recommended Action:
+
+Restart payment-api
+
+Reason:
+
+High latency detected for 5 consecutive minutes.
+
+Risk:
+
+Medium
+
+
+Buttons:
+
+Approve
+
+Reject
+
+
+==================================================
+24. APPROVAL FLOW
+==================================================
+
+When user clicks Approve:
+
+Show confirmation dialog.
+
+Title:
+
+Approve automated action?
+
+Description:
+
+Lily will trigger the recommended remediation workflow.
+
+Buttons:
+
+Cancel
+
+Approve Action
+
+
+After approval:
+
+Show loading:
+
+Approving...
+
+Then:
+
+Approved ✓
+
+Invalidate relevant TanStack Query caches.
+
+==================================================
+25. REJECT FLOW
+==================================================
+
+Reject dialog:
+
+Reason for rejection
+
+Optional textarea.
+
+Button:
+
+Reject Action
+
+
+Then:
+
+status becomes:
+
+REJECTED
+
+
+==================================================
+26. ACTIONS PAGE
+==================================================
+
+Show automated actions.
+
+Columns:
+
+Action
+
+Incident
+
+Status
+
+Triggered By
+
+Created
+
+Completed
+
+
+Statuses:
+
+PENDING
+
+RUNNING
+
+SUCCESS
+
+FAILED
+
+
+Running action:
+
+animated blue indicator.
+
+
+==================================================
+27. AUTOMATION PAGE
+==================================================
+
+This page is important for the hackathon.
+
+Title:
+
+Automation
+
+Subtitle:
+
+Lily orchestrates incident response using n8n.
+
+
+Show workflow:
+
+Incident
+   ↓
+AI Analysis
+   ↓
+Severity Detection
+   ↓
+Approval
+   ↓
+n8n Automation
+   ↓
+FastAPI Action
+   ↓
+Notification
+   ↓
+Resolved
+
+
+Use a visually impressive workflow diagram.
+
+Blue connecting lines.
+
+Each node should be a card.
+
+Example:
+
+┌──────────────────┐
+│ ✦ AI Analysis    │
+│                  │
+│ Completed ✓      │
+└──────────────────┘
+
+↓
+
+┌──────────────────┐
+│ ⚡ n8n Workflow  │
+│                  │
+│ Running...       │
+└──────────────────┘
+
+↓
+
+┌──────────────────┐
+│ Telegram         │
+│                  │
+│ Sent ✓           │
+└──────────────────┘
+
+
+==================================================
+28. N8N AUTOMATION
+==================================================
+
+The frontend does NOT execute n8n directly.
+
+FastAPI handles automation requests.
+
+Example:
+
+Frontend
+
+POST /incidents/{id}/approve
+
+FastAPI:
+
+1. updates incident
+2. creates action
+3. calls n8n webhook
+
+n8n:
+
+1. receives webhook
+2. performs automation
+3. sends Telegram notification
+4. calls FastAPI callback
+
+FastAPI:
+
+updates action status
+
+Frontend:
+
+TanStack Query refreshes data.
+
+
+==================================================
+29. AUTOMATION STATUS
+==================================================
+
+Show:
+
+n8n
+
+Connected ✓
+
+Webhook:
+
+Connected ✓
+
+Last execution:
+
+2 minutes ago
+
+Successful executions:
+
+124
+
+Failed:
+
+3
+
+
+==================================================
+30. REPORTS PAGE
+==================================================
+
+Create a simple analytics dashboard.
+
+Metrics:
+
+Total Incidents
+
+Resolved Incidents
+
+Critical Incidents
+
+Average Resolution Time
+
+AI Accuracy
+
+Automation Success Rate
+
+
+Charts:
+
+Incidents by Severity
+
+Incidents by Service
+
+Resolution Trend
+
+Automation Success
+
+
+==================================================
+31. SETTINGS PAGE
+==================================================
+
+Sections:
+
+Profile
+
+Notifications
+
+Automation
+
+Integrations
+
+System
+
+
+Integrations:
+
+AI Engine
+n8n
+Telegram
+PostgreSQL
+
+
+Show connection status.
+
+Example:
+
+Telegram
+
+Connected ✓
+
+n8n
+
+Connected ✓
+
+
+==================================================
+32. LOADING STATES
+==================================================
+
+Every API page must have loading states.
+
+Use skeleton loaders.
+
+Do NOT show blank screens.
+
+Examples:
+
+MetricCardSkeleton
+
+TableSkeleton
+
+IncidentCardSkeleton
+
+
+==================================================
+33. ERROR STATES
+==================================================
+
+Every API request must handle errors.
+
+Example:
+
+Unable to load incidents.
+
+Please check your connection and try again.
+
+[ Retry ]
+
+
+Use toast notifications for mutations.
+
+
+==================================================
+34. EMPTY STATES
+==================================================
+
+Example:
+
+No incidents found.
+
+Your systems look healthy.
+
+Lily is keeping watch.
+
+[ Create Incident ]
+
+
+==================================================
+35. RESPONSIVE DESIGN
+==================================================
+
+Must work on:
+
+Desktop
+Tablet
+Mobile
+
+Desktop:
+
+Sidebar visible.
+
+Tablet:
+
+Compact sidebar.
+
+Mobile:
+
+Drawer navigation.
+
+Tables should become cards on small screens.
+
+Never allow horizontal overflow unnecessarily.
+
+
+==================================================
+36. ACCESSIBILITY
+==================================================
+
+Use semantic HTML.
+
+Buttons must have accessible labels.
+
+Inputs must have labels.
+
+Keyboard navigation must work.
+
+Focus states must be visible.
+
+Maintain good color contrast.
+
+
+==================================================
+37. TANSTACK QUERY
+==================================================
+
+Use TanStack Query for server state.
+
+Queries:
+
+useDashboard()
+
+useIncidents()
+
+useIncident(id)
+
+useApprovals()
+
+useActions()
+
+useSystemStatus()
+
+
+Mutations:
+
+useCreateIncident()
+
+useAnalyzeIncident()
+
+useApproveIncident()
+
+useRejectIncident()
+
+useExecuteAction()
+
+
+After mutation:
+
+invalidate appropriate queries.
+
+
+==================================================
+38. MOCK DATA
+==================================================
+
+Create realistic development mock data.
+
+Example:
+
+5–10 incidents.
+
+Include:
+
+critical incidents
+high incidents
+medium incidents
+resolved incidents
+pending approvals
+running actions
+
+Do NOT use lorem ipsum.
+
+Use realistic DevOps incidents.
+
+Examples:
+
+Payment API latency increased
+
+Database connection pool exhausted
+
+Authentication service unavailable
+
+Redis memory usage exceeded threshold
+
+Order processing queue delayed
+
+
+Mock mode should be easily disabled when FastAPI is ready.
+
+
+==================================================
+39. API FALLBACK
+==================================================
+
+Create:
+
+VITE_USE_MOCK_DATA=true
+
+When:
+
+true
+
+use mock services.
+
+When:
+
+false
+
+use FastAPI.
+
+Do NOT duplicate business logic.
+
+Both should return the same TypeScript types.
+
+
+==================================================
+40. TOASTS
+==================================================
+
+Use a lightweight toast implementation.
+
+Examples:
+
+Incident created successfully
+
+AI analysis completed
+
+Action approved
+
+Automation started
+
+Action completed successfully
+
+Failed to execute action
+
+
+==================================================
+41. CONFIRMATION DIALOGS
+==================================================
+
+Dangerous operations require confirmation.
+
+Examples:
+
+Approve action
+
+Reject action
+
+Execute remediation
+
+Close incident
+
+
+==================================================
+42. REAL-TIME FEEL
+==================================================
+
+The application should feel alive.
+
+If WebSocket/SSE is not implemented yet:
+
+use polling with TanStack Query.
+
+For active incidents:
+
+refetch every 5 seconds.
+
+For dashboard:
+
+refetch every 15 seconds.
+
+Make polling configurable.
+
+
+==================================================
+43. HACKATHON DEMO FLOW
+==================================================
+
+The entire frontend must support this exact demo.
+
+STEP 1
+
+Open:
+
+Dashboard
+
+Show:
+
+12 incidents
+
+2 critical
+
+48 resolved
+
+18m average resolution
+
+
+STEP 2
+
+Click:
+
+Create Incident
+
+
+STEP 3
+
+Create:
+
+Payment API latency increased
+
+Service:
+
+payment-api
+
+Environment:
+
+production
+
+Severity:
+
+HIGH
+
+
+STEP 4
+
+Incident appears:
+
+ANALYZING...
+
+
+STEP 5
+
+Backend returns AI analysis:
+
+HIGH
+
+PERFORMANCE
+
+92% confidence
+
+
+STEP 6
+
+Status becomes:
+
+AWAITING_APPROVAL
+
+
+STEP 7
+
+Go to:
+
+Approvals
+
+
+Show:
+
+Restart payment-api
+
+Risk:
+
+MEDIUM
+
+
+STEP 8
+
+Click:
+
+Approve Action
+
+
+STEP 9
+
+Show:
+
+Automation running...
+
+Workflow:
+
+Approval
+ ↓
+n8n
+ ↓
+Telegram
+ ↓
+FastAPI
+ ↓
+Action
+
+
+STEP 10
+
+Show:
+
+Action SUCCESS ✓
+
+
+STEP 11
+
+Incident status:
+
+RESOLVED ✓
+
+
+STEP 12
+
+Dashboard updates automatically.
+
+
+==================================================
+44. VISUAL STORY
+==================================================
+
+The UI should communicate this story:
+
+Something went wrong.
+
+        ↓
+
+Lily detected it.
+
+        ↓
+
+Lily analyzed it.
+
+        ↓
+
+Lily recommended a solution.
+
+        ↓
+
+Human approved it.
+
+        ↓
+
+n8n automated it.
+
+        ↓
+
+FastAPI executed it.
+
+        ↓
+
+Lily confirmed resolution.
+
+
+This is the core hackathon story.
+
+Make this flow visually obvious.
+
+
+==================================================
+45. BLUE BRANDING
+==================================================
+
+Lily's identity:
+
+Primary:
+
+#2563EB
+
+Dark:
+
+#0B1220
+
+Secondary:
+
+#111827
+
+Highlight:
+
+#60A5FA
+
+
+Logo:
+
+✦ Lily
+
+Use a simple AI/spark/flower-inspired icon.
+
+Do not make the logo overly complicated.
+
+The logo should work in:
+
+sidebar
+login
+favicon
+loading state
+AI cards
+
+
+==================================================
+46. MICRO-INTERACTIONS
+==================================================
+
+Use subtle animations:
+
+Page fade-in
+
+Card hover
+
+Button hover
+
+AI analyzing pulse
+
+Workflow active pulse
+
+Success check animation
+
+Toast slide-in
+
+Do not make the UI distracting.
+
+
+==================================================
+47. PERFORMANCE
+==================================================
+
+Optimize the application.
+
+Use:
+
+lazy-loaded pages
+
+React.memo only when useful
+
+TanStack Query caching
+
+small reusable components
+
+avoid unnecessary re-renders
+
+Do not load large libraries unnecessarily.
+
+
+==================================================
+48. SECURITY
+==================================================
+
+Never expose:
+
+API keys
+
+AI keys
+
+n8n secrets
+
+Telegram bot tokens
+
+database credentials
+
+in frontend code.
+
+All secrets belong in FastAPI/n8n environment variables.
+
+The frontend only communicates with the FastAPI API.
+
+
+==================================================
+49. CODE QUALITY
+==================================================
+
+Write clean production-quality TypeScript.
+
+Rules:
+
+- strict TypeScript
+- no unnecessary `any`
+- reusable components
+- small components
+- meaningful names
+- no duplicated API logic
+- no duplicated styles
+- clear folder structure
+- proper error handling
+- proper loading states
+
+
+==================================================
+50. README
+==================================================
+
+Create/update README.md.
+
+Include:
+
+# Lily
+
+AI Incident Response & Automation Platform
+
+Architecture
+
+Frontend:
+
+React + TypeScript + Vite
+
+Backend:
+
+FastAPI
+
+Database:
+
+PostgreSQL
+
+Automation:
+
+n8n
+
+AI:
+
+LLM
+
+Notifications:
+
+Telegram
+
+
+Include:
+
+installation
+
+environment variables
+
+development commands
+
+production build
+
+API configuration
+
+mock mode
+
+architecture diagram
+
+hackathon demo flow
+
+
+==================================================
+51. DEVELOPMENT COMMANDS
+==================================================
+
+The project should run with:
+
+npm install
+
+npm run dev
+
+Build:
+
+npm run build
+
+Preview:
+
+npm run preview
+
+
+==================================================
+52. IMPORTANT IMPLEMENTATION RULE
+==================================================
+
+Before writing code:
+
+1. Inspect the existing repository.
+
+2. Do NOT delete existing working code.
+
+3. Reuse existing configuration where appropriate.
+
+4. Identify whether Tailwind/Vite/React are already configured.
+
+5. Only add dependencies that are actually needed.
+
+6. Build incrementally.
+
+7. Keep the application runnable after every major step.
+
+8. Do not create fake backend logic inside components.
+
+9. Keep API logic inside src/api.
+
+10. Keep server state inside TanStack Query.
+
+11. Keep UI state local unless global state is genuinely required.
+
+
+==================================================
+53. IMPLEMENTATION ORDER
+==================================================
+
+Implement in this order:
+
+PHASE 1
+
+Project setup
+
+- Tailwind
+- routing
+- Axios
+- TanStack Query
+- global styles
+- theme
+
+PHASE 2
+
+Layout
+
+- Sidebar
+- Topbar
+- responsive navigation
+
+PHASE 3
+
+Dashboard
+
+- metrics
+- charts
+- system status
+- recent incidents
+
+PHASE 4
+
+Incidents
+
+- list
+- filters
+- create modal
+- details
+
+PHASE 5
+
+AI Analysis
+
+- AI analysis card
+- confidence
+- recommendation
+- timeline
+
+PHASE 6
+
+Approvals
+
+- pending approvals
+- approve
+- reject
+- confirmation dialogs
+
+PHASE 7
+
+Actions
+
+- action history
+- status
+- execution details
+
+PHASE 8
+
+Automation
+
+- n8n workflow visualization
+- execution status
+- automation logs
+
+PHASE 9
+
+Reports
+
+- analytics
+- charts
+
+PHASE 10
+
+Settings
+
+- integrations
+- system status
+
+PHASE 11
+
+Polish
+
+- loading states
+- errors
+- empty states
+- animations
+- responsive design
+- accessibility
+
+
+==================================================
+54. FINAL REQUIREMENT
+==================================================
+
+Do not just create a collection of pages.
+
+Create a cohesive product.
+
+The final application should feel like a real startup product called:
+
+LILY
+
+AI Incident Response & Automation Platform
+
+The most important experience is:
+
+INCIDENT
+    ↓
+AI ANALYSIS
+    ↓
+RECOMMENDATION
+    ↓
+HUMAN APPROVAL
+    ↓
+N8N AUTOMATION
+    ↓
+FASTAPI ACTION
+    ↓
+TELEGRAM NOTIFICATION
+    ↓
+RESOLVED
+
+The blue Lily visual identity must remain consistent throughout the entire application.
+
+Start by inspecting the repository and then implement the frontend systematically according to this specification.

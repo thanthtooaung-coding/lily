@@ -1,0 +1,1323 @@
+You are a senior Python backend engineer and system architect.
+
+I am building a hackathon project called:
+
+# Lily
+AI-Powered Incident Response & Automation Platform
+
+The goal of Lily is to receive incidents/events from users or external systems, analyze them using AI, automatically trigger workflows through n8n, notify the appropriate people, optionally request human approval, execute actions through Lily's FastAPI backend, and keep a complete incident history.
+
+==================================================
+1. CORE CONCEPT
+==================================================
+
+Lily follows this flow:
+
+User/System
+    ↓
+Lily FastAPI Backend
+    ↓
+Create Incident
+    ↓
+n8n Automation
+    ↓
+AI Analysis
+    ↓
+Severity / Priority / Recommended Action
+    ↓
+Notification
+    ↓
+Optional Human Approval
+    ↓
+Execute Action through Lily API
+    ↓
+Update Incident
+    ↓
+Store Audit Log
+    ↓
+Dashboard / Reporting
+
+Example:
+
+A monitoring system reports:
+
+"Production payment API response time increased by 300%."
+
+Lily receives the incident.
+
+Lily creates:
+
+{
+  "severity": "HIGH",
+  "service": "payment-api",
+  "title": "Payment API latency increased",
+  "description": "Production API response time increased by 300%"
+}
+
+n8n receives the incident.
+
+n8n sends the incident to an AI model.
+
+AI determines:
+
+- severity
+- category
+- impact
+- urgency
+- recommended action
+- whether human approval is required
+
+n8n then sends a Telegram notification.
+
+Example:
+
+🚨 Lily Incident Alert
+
+Service: payment-api
+Severity: HIGH
+
+Payment API latency increased by 300%.
+
+Recommended action:
+Restart payment-api and monitor response time.
+
+Human approval required: YES
+
+The user can approve/reject.
+
+If approved, n8n calls Lily's FastAPI endpoint to execute the action.
+
+Lily records everything in the database.
+
+==================================================
+2. TECHNOLOGY STACK
+==================================================
+
+Backend:
+
+- Python 3.12+
+- FastAPI
+- Pydantic v2
+- SQLAlchemy 2.x
+- PostgreSQL
+- Alembic
+- httpx
+- python-dotenv
+- Uvicorn
+- pytest
+- pytest-asyncio
+
+Architecture:
+
+- REST API
+- async where appropriate
+- clean architecture
+- modular design
+- service/repository pattern
+- dependency injection
+- environment-based configuration
+
+Automation:
+
+- n8n
+
+AI:
+
+- The AI provider should be configurable.
+- Do not hard-code OpenAI-specific logic everywhere.
+- Create an AI service abstraction so another provider can be added later.
+
+Notifications:
+
+- Telegram through n8n
+- Design the system so Slack/email can be added later.
+
+==================================================
+3. PROJECT STRUCTURE
+==================================================
+
+Create a professional structure similar to:
+
+lily-backend/
+│
+├── app/
+│   ├── main.py
+│   │
+│   ├── core/
+│   │   ├── config.py
+│   │   ├── database.py
+│   │   ├── security.py
+│   │   └── logging.py
+│   │
+│   ├── models/
+│   │   ├── incident.py
+│   │   ├── incident_event.py
+│   │   ├── action.py
+│   │   ├── approval.py
+│   │   ├── notification.py
+│   │   └── audit_log.py
+│   │
+│   ├── schemas/
+│   │   ├── incident.py
+│   │   ├── action.py
+│   │   ├── approval.py
+│   │   └── n8n.py
+│   │
+│   ├── api/
+│   │   ├── incidents.py
+│   │   ├── actions.py
+│   │   ├── approvals.py
+│   │   ├── webhooks.py
+│   │   └── health.py
+│   │
+│   ├── services/
+│   │   ├── incident_service.py
+│   │   ├── action_service.py
+│   │   ├── approval_service.py
+│   │   ├── n8n_service.py
+│   │   ├── notification_service.py
+│   │   └── ai_service.py
+│   │
+│   ├── repositories/
+│   │   ├── incident_repository.py
+│   │   ├── action_repository.py
+│   │   ├── approval_repository.py
+│   │   └── audit_repository.py
+│   │
+│   └── utils/
+│       ├── enums.py
+│       └── helpers.py
+│
+├── alembic/
+│
+├── tests/
+│
+├── .env.example
+├── .gitignore
+├── requirements.txt
+├── alembic.ini
+├── Dockerfile
+├── docker-compose.yml
+└── README.md
+
+Do not over-engineer the project.
+
+The code must remain easy to understand for a hackathon team.
+
+==================================================
+4. INCIDENT MODEL
+==================================================
+
+Create an Incident entity.
+
+Fields:
+
+- id
+- title
+- description
+- service
+- environment
+- severity
+- status
+- category
+- source
+- impact
+- urgency
+- ai_analysis
+- recommended_action
+- requires_approval
+- created_at
+- updated_at
+- resolved_at
+
+Use UUID for IDs.
+
+Severity enum:
+
+LOW
+MEDIUM
+HIGH
+CRITICAL
+
+Status enum:
+
+OPEN
+ANALYZING
+AWAITING_APPROVAL
+IN_PROGRESS
+RESOLVED
+FAILED
+CLOSED
+
+Category enum:
+
+SECURITY
+PERFORMANCE
+DATABASE
+INFRASTRUCTURE
+APPLICATION
+NETWORK
+OTHER
+
+==================================================
+5. INCIDENT API
+==================================================
+
+Create:
+
+POST /api/v1/incidents
+
+Create a new incident.
+
+Request:
+
+{
+  "title": "Payment API latency increased",
+  "description": "Production response time increased by 300%",
+  "service": "payment-api",
+  "environment": "production",
+  "source": "monitoring-system"
+}
+
+Response:
+
+{
+  "id": "uuid",
+  "status": "OPEN",
+  "severity": "HIGH",
+  "created_at": "..."
+}
+
+----------------------------------------------
+
+GET /api/v1/incidents
+
+Return paginated incidents.
+
+Support:
+
+- status
+- severity
+- category
+- service
+- date range
+
+----------------------------------------------
+
+GET /api/v1/incidents/{incident_id}
+
+Return complete incident details.
+
+----------------------------------------------
+
+PATCH /api/v1/incidents/{incident_id}
+
+Allow updating:
+
+- status
+- severity
+- category
+- impact
+- urgency
+- recommended_action
+
+----------------------------------------------
+
+POST /api/v1/incidents/{incident_id}/resolve
+
+Resolve the incident.
+
+----------------------------------------------
+
+POST /api/v1/incidents/{incident_id}/close
+
+Close the incident.
+
+==================================================
+6. INCIDENT ANALYSIS
+==================================================
+
+Create:
+
+POST /api/v1/incidents/{incident_id}/analyze
+
+This endpoint should:
+
+1. Load the incident.
+2. Prepare an AI analysis request.
+3. Return structured analysis.
+4. Save the analysis to the incident.
+5. Update severity/category/etc.
+6. Determine whether approval is required.
+
+Example response:
+
+{
+  "incident_id": "uuid",
+  "severity": "HIGH",
+  "category": "PERFORMANCE",
+  "impact": "Users may experience slow payment processing.",
+  "urgency": "HIGH",
+  "recommended_action": "Restart payment-api and monitor latency.",
+  "requires_approval": true,
+  "reason": "Restarting a production service can affect active users."
+}
+
+The AI response MUST be structured JSON.
+
+Do not rely on parsing arbitrary natural language.
+
+==================================================
+7. ACTION SYSTEM
+==================================================
+
+Create an Action entity.
+
+Fields:
+
+- id
+- incident_id
+- action_type
+- description
+- status
+- requested_by
+- approved_by
+- started_at
+- completed_at
+- result
+- error_message
+
+Action status:
+
+PENDING
+APPROVED
+REJECTED
+RUNNING
+SUCCESS
+FAILED
+
+Example action types:
+
+RESTART_SERVICE
+CLEAR_CACHE
+SCALE_SERVICE
+DISABLE_FEATURE
+RUN_HEALTH_CHECK
+SEND_NOTIFICATION
+CUSTOM
+
+==================================================
+8. ACTION API
+==================================================
+
+Create:
+
+POST /api/v1/incidents/{incident_id}/actions
+
+Create an action.
+
+Example:
+
+{
+  "action_type": "RESTART_SERVICE",
+  "description": "Restart payment-api"
+}
+
+----------------------------------------------
+
+POST /api/v1/actions/{action_id}/execute
+
+Execute the action.
+
+IMPORTANT:
+
+For the hackathon, DO NOT actually execute dangerous server commands.
+
+Instead create a safe simulated action executor.
+
+Example:
+
+RESTART_SERVICE
+
+returns:
+
+{
+  "success": true,
+  "message": "Simulated restart of payment-api completed successfully."
+}
+
+This makes the hackathon demo safe.
+
+Design the executor using an abstraction so real integrations can be added later.
+
+==================================================
+9. APPROVAL SYSTEM
+==================================================
+
+Create Approval entity.
+
+Fields:
+
+- id
+- incident_id
+- action_id
+- status
+- requested_at
+- responded_at
+- responded_by
+- comment
+
+Approval status:
+
+PENDING
+APPROVED
+REJECTED
+EXPIRED
+
+Endpoints:
+
+POST /api/v1/actions/{action_id}/approve
+
+POST /api/v1/actions/{action_id}/reject
+
+GET /api/v1/approvals/pending
+
+Example approval:
+
+POST /api/v1/actions/{action_id}/approve
+
+{
+  "comment": "Approved by operations team."
+}
+
+When an action is approved, it should become executable.
+
+==================================================
+10. N8N INTEGRATION
+==================================================
+
+n8n is a CORE part of Lily.
+
+Do not put all automation logic inside FastAPI.
+
+FastAPI handles:
+
+- business logic
+- database
+- incidents
+- actions
+- approvals
+- audit logs
+
+n8n handles:
+
+- workflow orchestration
+- AI analysis
+- notifications
+- human approval
+- external integrations
+- scheduled tasks
+
+Create an n8n service.
+
+Environment variables:
+
+N8N_BASE_URL=
+N8N_INCIDENT_WEBHOOK_URL=
+N8N_API_KEY=
+
+Create:
+
+POST /api/v1/webhooks/n8n/incident
+
+This endpoint allows n8n to send incident updates back to Lily.
+
+It should accept:
+
+{
+  "incident_id": "uuid",
+  "event_type": "AI_ANALYSIS_COMPLETED",
+  "data": {
+    "severity": "HIGH",
+    "category": "PERFORMANCE",
+    "recommended_action": "Restart payment-api",
+    "requires_approval": true
+  }
+}
+
+Validate webhook requests with a shared secret or API key.
+
+==================================================
+11. FASTAPI → N8N FLOW
+==================================================
+
+When a new incident is created:
+
+POST /api/v1/incidents
+
+should:
+
+1. Save incident.
+2. Create audit log.
+3. Trigger n8n.
+
+n8n should receive:
+
+{
+  "event": "incident.created",
+  "incident": {
+    "id": "...",
+    "title": "...",
+    "description": "...",
+    "service": "...",
+    "environment": "...",
+    "severity": "...",
+    "status": "OPEN"
+  }
+}
+
+Do not make the API request fail just because n8n is temporarily unavailable.
+
+Use a background task or an appropriate asynchronous mechanism.
+
+Log n8n failures.
+
+==================================================
+12. N8N WORKFLOW 1 — INCIDENT TRIAGE
+==================================================
+
+Create documentation describing this workflow.
+
+Workflow:
+
+Webhook
+   ↓
+Receive Incident
+   ↓
+Validate Data
+   ↓
+AI Analysis
+   ↓
+Parse Structured JSON
+   ↓
+Update Lily Incident
+   ↓
+IF Severity
+   ├── LOW → Log / Normal notification
+   ├── MEDIUM → Telegram notification
+   ├── HIGH → Telegram + Approval
+   └── CRITICAL → Telegram + Approval + Escalation
+   ↓
+Store Audit Event
+
+n8n should call:
+
+POST /api/v1/incidents/{id}/analyze
+
+or directly process the AI result and call:
+
+POST /api/v1/webhooks/n8n/incident
+
+depending on the final workflow design.
+
+Prefer keeping AI execution inside n8n because this demonstrates the purpose of n8n.
+
+==================================================
+13. N8N WORKFLOW 2 — TELEGRAM ALERT
+==================================================
+
+Create a workflow:
+
+Webhook
+   ↓
+Get Incident
+   ↓
+Format Telegram Message
+   ↓
+Telegram Send Message
+
+Example:
+
+🚨 *LILY INCIDENT ALERT*
+
+*Severity:* HIGH
+*Service:* payment-api
+*Environment:* production
+
+*Incident:*
+Payment API latency increased by 300%.
+
+*Impact:*
+Users may experience slow payment processing.
+
+*Recommended Action:*
+Restart payment-api and monitor latency.
+
+⚠️ Human approval required.
+
+Incident ID:
+xxxxxxxx
+
+Use Telegram through n8n.
+
+FastAPI should NOT directly depend on Telegram.
+
+==================================================
+14. N8N WORKFLOW 3 — HUMAN APPROVAL
+==================================================
+
+For HIGH and CRITICAL incidents:
+
+Incident
+   ↓
+Create Action
+   ↓
+Telegram Approval Request
+   ↓
+Human chooses:
+   APPROVE
+   REJECT
+   ↓
+n8n calls FastAPI
+   ↓
+If APPROVED
+   ↓
+Execute Action
+   ↓
+Update Incident
+   ↓
+Send Success Notification
+
+If REJECTED:
+
+Update action to REJECTED
+Update incident
+Send Telegram notification
+Create audit log
+
+==================================================
+15. N8N WORKFLOW 4 — DAILY REPORT
+==================================================
+
+Create a scheduled n8n workflow.
+
+Schedule:
+
+Every day at 9:00 AM.
+
+Flow:
+
+Schedule Trigger
+   ↓
+GET /api/v1/incidents?date=today
+   ↓
+AI Summary
+   ↓
+Generate Daily Report
+   ↓
+Send Telegram
+
+Example:
+
+🌸 Lily Daily Incident Report
+
+Date: 25 Aug 2026
+
+Total incidents: 12
+Resolved: 10
+Open: 2
+
+Critical: 1
+High: 3
+Medium: 5
+Low: 3
+
+Top affected service:
+payment-api
+
+AI Summary:
+Most incidents were related to API performance...
+
+==================================================
+16. N8N WORKFLOW 5 — INCIDENT ESCALATION
+==================================================
+
+Create an escalation workflow.
+
+Example:
+
+Every 15 minutes:
+
+Get open incidents
+   ↓
+Check severity
+   ↓
+Check how long incident has been open
+   ↓
+IF HIGH > 15 minutes
+   ↓
+Send escalation notification
+
+IF CRITICAL > 5 minutes
+   ↓
+Send urgent notification
+
+Do not spam notifications.
+
+Store escalation history.
+
+==================================================
+17. AUDIT LOG
+==================================================
+
+Everything important must be recorded.
+
+Create AuditLog:
+
+- id
+- incident_id
+- action
+- actor
+- source
+- metadata
+- created_at
+
+Examples:
+
+INCIDENT_CREATED
+AI_ANALYSIS_COMPLETED
+SEVERITY_CHANGED
+ACTION_CREATED
+APPROVAL_REQUESTED
+ACTION_APPROVED
+ACTION_REJECTED
+ACTION_EXECUTED
+NOTIFICATION_SENT
+INCIDENT_RESOLVED
+
+==================================================
+18. API SECURITY
+==================================================
+
+Implement basic API security suitable for a hackathon.
+
+Use:
+
+X-API-Key
+
+for internal/n8n endpoints.
+
+Environment:
+
+LILY_INTERNAL_API_KEY=
+
+Protect:
+
+/api/v1/webhooks/n8n/*
+/api/v1/actions/*/execute
+
+Do not hard-code API keys.
+
+Use environment variables.
+
+==================================================
+19. CONFIGURATION
+==================================================
+
+Create .env.example:
+
+APP_NAME=Lily
+APP_ENV=development
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/lily
+
+LILY_INTERNAL_API_KEY=
+
+N8N_BASE_URL=
+N8N_INCIDENT_WEBHOOK_URL=
+N8N_API_KEY=
+
+AI_PROVIDER=
+AI_API_KEY=
+
+TELEGRAM_BOT_TOKEN=
+
+Do not commit .env.
+
+==================================================
+20. DATABASE
+==================================================
+
+Use PostgreSQL.
+
+Use SQLAlchemy 2.x.
+
+Use Alembic migrations.
+
+Create migrations for:
+
+- incidents
+- actions
+- approvals
+- audit_logs
+- notifications
+
+Use proper indexes.
+
+Important indexes:
+
+incidents.status
+incidents.severity
+incidents.service
+incidents.created_at
+actions.status
+approvals.status
+audit_logs.incident_id
+
+==================================================
+21. ERROR HANDLING
+==================================================
+
+Create consistent API errors.
+
+Example:
+
+{
+  "success": false,
+  "error": {
+    "code": "INCIDENT_NOT_FOUND",
+    "message": "Incident not found."
+  }
+}
+
+Use appropriate HTTP status codes.
+
+400
+401
+403
+404
+409
+422
+500
+
+Never expose internal stack traces to clients.
+
+==================================================
+22. LOGGING
+==================================================
+
+Use structured logging.
+
+Every important request should log:
+
+- request ID
+- endpoint
+- status code
+- duration
+- incident ID if available
+
+For errors include:
+
+- exception
+- incident ID
+- action ID
+
+==================================================
+23. HEALTH CHECK
+==================================================
+
+Create:
+
+GET /health
+
+Response:
+
+{
+  "status": "ok",
+  "service": "lily-backend"
+}
+
+Create:
+
+GET /health/database
+
+Check PostgreSQL connection.
+
+==================================================
+24. API DOCUMENTATION
+==================================================
+
+Use FastAPI automatic OpenAPI documentation.
+
+Make sure:
+
+/docs
+
+works correctly.
+
+Add useful summaries and descriptions to endpoints.
+
+==================================================
+25. TESTING
+==================================================
+
+Create tests for:
+
+- creating incidents
+- retrieving incidents
+- updating incidents
+- analyzing incidents
+- creating actions
+- approving actions
+- rejecting actions
+- executing actions
+- resolving incidents
+- webhook authentication
+- health check
+
+Use pytest.
+
+Do not require real n8n or Telegram for unit tests.
+
+Mock external services.
+
+==================================================
+26. DOCKER
+==================================================
+
+Create docker-compose.yml with:
+
+- lily-api
+- postgres
+
+Do NOT include n8n in the same compose file unless it is useful.
+
+n8n can run separately.
+
+Expose:
+
+FastAPI:
+8000
+
+PostgreSQL:
+5432
+
+==================================================
+27. README
+==================================================
+
+Create a professional README.
+
+Include:
+
+# Lily
+
+AI-Powered Incident Response & Automation Platform
+
+## Problem
+
+Explain the problem of manually handling incidents.
+
+## Solution
+
+Explain how Lily automates incident response using FastAPI + n8n + AI.
+
+## Architecture
+
+Include an ASCII architecture diagram.
+
+## Tech Stack
+
+Python
+FastAPI
+PostgreSQL
+SQLAlchemy
+Alembic
+n8n
+AI
+Telegram
+
+## Features
+
+- Incident management
+- AI incident analysis
+- Severity classification
+- Automated notifications
+- Human approval
+- Automated remediation
+- Escalation
+- Audit logs
+- Daily reports
+
+## Running locally
+
+Explain:
+
+1. Clone repository
+2. Create virtual environment
+3. Install dependencies
+4. Configure .env
+5. Start PostgreSQL
+6. Run migrations
+7. Start FastAPI
+8. Configure n8n
+9. Test webhook
+
+Example:
+
+uvicorn app.main:app --reload
+
+## API
+
+Document important endpoints.
+
+## n8n Integration
+
+Explain exactly how to connect n8n to Lily.
+
+==================================================
+28. HACKATHON DEMO SCENARIO
+==================================================
+
+Make the backend support this demo:
+
+STEP 1
+
+Create an incident:
+
+POST /api/v1/incidents
+
+{
+  "title": "Payment API latency increased",
+  "description": "Response time increased by 300%",
+  "service": "payment-api",
+  "environment": "production",
+  "source": "monitoring"
+}
+
+STEP 2
+
+FastAPI saves it.
+
+STEP 3
+
+FastAPI triggers n8n.
+
+STEP 4
+
+n8n sends the incident to AI.
+
+STEP 5
+
+AI returns:
+
+{
+  "severity": "HIGH",
+  "category": "PERFORMANCE",
+  "impact": "Payment requests may be delayed.",
+  "urgency": "HIGH",
+  "recommended_action": "Restart payment-api",
+  "requires_approval": true
+}
+
+STEP 6
+
+n8n updates Lily.
+
+STEP 7
+
+n8n sends Telegram:
+
+🚨 Lily Incident Alert
+
+HIGH severity
+
+Payment API latency increased by 300%.
+
+Recommended:
+Restart payment-api.
+
+Approval required.
+
+STEP 8
+
+User approves through the workflow.
+
+STEP 9
+
+n8n calls:
+
+POST /api/v1/actions/{id}/execute
+
+STEP 10
+
+FastAPI safely simulates:
+
+"payment-api restarted successfully."
+
+STEP 11
+
+Lily updates:
+
+Incident:
+RESOLVED
+
+Action:
+SUCCESS
+
+STEP 12
+
+Telegram:
+
+✅ Lily Incident Resolved
+
+Service:
+payment-api
+
+Action:
+Restart payment-api
+
+Result:
+Successful
+
+==================================================
+29. IMPORTANT DESIGN PRINCIPLES
+==================================================
+
+Follow these principles:
+
+1. Keep FastAPI responsible for core business logic.
+
+2. Keep n8n responsible for orchestration and automation.
+
+3. Do not tightly couple FastAPI to n8n.
+
+4. Do not tightly couple the backend to Telegram.
+
+5. Use service abstractions.
+
+6. Use dependency injection.
+
+7. Use environment variables.
+
+8. Never hard-code secrets.
+
+9. Use UUIDs.
+
+10. Use database transactions.
+
+11. Validate all request data.
+
+12. Return consistent API responses.
+
+13. Keep the implementation hackathon-friendly.
+
+14. Avoid unnecessary microservices.
+
+15. Do not implement dangerous real server commands.
+
+16. Make remediation actions simulated but architected for real integrations later.
+
+==================================================
+30. IMPLEMENTATION ORDER
+==================================================
+
+Build the project in this order:
+
+PHASE 1
+Project setup
+- FastAPI
+- configuration
+- PostgreSQL
+- SQLAlchemy
+- Alembic
+
+PHASE 2
+Database models
+- Incident
+- Action
+- Approval
+- AuditLog
+- Notification
+
+PHASE 3
+Incident APIs
+
+PHASE 4
+Action and approval APIs
+
+PHASE 5
+AI service abstraction
+
+PHASE 6
+n8n integration
+
+PHASE 7
+Webhook authentication
+
+PHASE 8
+Audit logging
+
+PHASE 9
+Tests
+
+PHASE 10
+Docker
+
+PHASE 11
+README
+
+==================================================
+31. CODING STYLE
+==================================================
+
+Write production-quality but simple Python.
+
+Use:
+
+- type hints everywhere
+- async/await where appropriate
+- Pydantic schemas
+- SQLAlchemy 2.x style
+- clear function names
+- small functions
+- meaningful comments
+- no unnecessary comments
+- no giant files
+- no duplicated logic
+
+Avoid:
+
+- global mutable state
+- hard-coded credentials
+- giant service classes
+- unnecessary design patterns
+- unnecessary abstractions
+- synchronous blocking HTTP calls inside async endpoints
+
+==================================================
+32. FINAL REQUIREMENT
+==================================================
+
+Before finishing:
+
+1. Make sure the application starts successfully.
+2. Make sure database migrations work.
+3. Make sure /docs works.
+4. Make sure /health works.
+5. Make sure incident creation works.
+6. Make sure n8n webhook integration is documented.
+7. Make sure n8n can call FastAPI.
+8. Make sure FastAPI can trigger n8n.
+9. Make sure approval flow works.
+10. Make sure simulated action execution works.
+11. Make sure audit logs are created.
+12. Make sure tests pass.
+13. Make sure README contains complete setup instructions.
+
+Do not just generate placeholder files.
+
+Actually implement the working backend.
+
+If a design decision is unclear, choose the simplest production-quality solution that is appropriate for a hackathon.
+
+Start by creating the project structure and implementing Phase 1, then continue through all phases.
